@@ -13,7 +13,6 @@ import android.widget.TextView;
 
 import android.app.Activity;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -31,7 +30,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         usbManager = (UsbManager) getSystemService(USB_SERVICE);
         output = findViewById(R.id.output);
-        output.setText("The phone encrypts a 16-byte secret with the MH1721 public key.");
+        output.setText("The phone and the MH1721 share the 512-bit mh-rsa key. A block is 64 bytes. The exponent is 4 bytes.");
         findViewById(R.id.phone).setOnClickListener(v -> runPhone());
         findViewById(R.id.board).setOnClickListener(v -> startBoard());
     }
@@ -73,25 +72,19 @@ public class MainActivity extends Activity {
 
     private void runPhone() {
         try {
-            byte[] secret = newSecret();
-            byte[] cipher = RsaBox.encrypt(secret);
+            byte[] plain = RsaBox.plain();
+            byte[] cipher = RsaBox.encrypt(plain);
             byte[] opened = RsaBox.decrypt(cipher);
-            output.setText("phone\nsecret " + hex(secret)
-                    + "\ncipher bytes " + cipher.length
-                    + "\nopened " + hex(opened)
-                    + "\nmatch " + Arrays.equals(secret, opened));
+            output.setText("phone\nplain " + hex(plain)
+                    + "\ncipher matches " + Arrays.equals(cipher, RsaBox.cipher())
+                    + "\nopened matches " + Arrays.equals(opened, plain));
         } catch (Exception error) {
             output.setText(error.getClass().getSimpleName() + ": " + error.getMessage());
         }
     }
 
     private void startBoard() {
-        try {
-            pendingSecret = newSecret();
-        } catch (Exception error) {
-            output.setText(error.getMessage());
-            return;
-        }
+        pendingSecret = RsaBox.plain();
         ArrayList<UsbDevice> devices = new ArrayList<>(usbManager.getDeviceList().values());
         if (devices.isEmpty()) {
             output.setText("No USB device. Connect the MH1721 with a USB OTG adapter.");
@@ -120,38 +113,20 @@ public class MainActivity extends Activity {
             String text;
             try (BoardLink link = BoardLink.open(usbManager, device)) {
                 Frames.PublicKey pub = Frames.parsePublic(link.transact(Frames.request(Frames.HELLO, null)));
-                boolean modulusMatches = Arrays.equals(strip(pub.modulus), RsaBox.modulus());
-                boolean exponentMatches = Arrays.equals(strip(pub.exponent), RsaBox.publicExponent());
+                boolean modulusMatches = Arrays.equals(pub.modulus, RsaBox.modulus());
+                boolean exponentMatches = Arrays.equals(pub.exponent, RsaBox.publicExponent());
                 byte[] cipher = RsaBox.encrypt(secret);
                 byte[] opened = link.transact(Frames.request(Frames.OPEN, cipher));
                 text = "board\nmodulus matches " + modulusMatches
                         + "\nexponent matches " + exponentMatches
-                        + "\nsecret " + hex(secret)
-                        + "\nopened " + hex(opened)
-                        + "\nmatch " + Arrays.equals(secret, opened);
+                        + "\ncipher bytes " + cipher.length
+                        + "\nopened matches " + Arrays.equals(opened, secret);
             } catch (Exception error) {
                 text = error.getClass().getSimpleName() + ": " + error.getMessage();
             }
             String show = text;
             runOnUiThread(() -> output.setText(show));
         }).start();
-    }
-
-    private static byte[] newSecret() {
-        byte[] secret = new byte[16];
-        new SecureRandom().nextBytes(secret);
-        return secret;
-    }
-
-    private static byte[] strip(byte[] value) {
-        int start = 0;
-        while (start < value.length - 1 && value[start] == 0) {
-            start++;
-        }
-        if (start == 0) {
-            return value;
-        }
-        return Arrays.copyOfRange(value, start, value.length);
     }
 
     private static String hex(byte[] bytes) {

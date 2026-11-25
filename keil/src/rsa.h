@@ -3,7 +3,11 @@
 
 #include <stdint.h>
 
-/* 2048-bit RSA, PKCS#1 v1.5. Same padding as Android RSA/ECB/PKCS1Padding. */
+/*
+ * Same parameter sizes as mh-rsa MHRSA_Pub / MHRSA_Pri / MHRSA_Crt.
+ * Input and output are RSA_BYTES (64). The public exponent is RSA_E_BYTES (4).
+ * No PKCS#1 padding.
+ */
 
 int rsa_selftest(void);
 int rsa_open(const uint8_t *cipher, int cipher_len, uint8_t *out, int out_cap);

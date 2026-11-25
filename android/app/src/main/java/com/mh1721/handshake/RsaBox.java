@@ -1,30 +1,24 @@
 package com.mh1721.handshake;
 
 import java.math.BigInteger;
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.spec.RSAPrivateKeySpec;
-import java.security.spec.RSAPublicKeySpec;
 
-import javax.crypto.Cipher;
-
-/** Android RSA/ECB/PKCS1Padding with the same key as the Keil firmware. */
+/**
+ * Raw modular exponentiation, the same operation as MHRSA_Pub and MHRSA_Pri.
+ * A block is 64 bytes. The public exponent is the 4-byte value 00010001.
+ */
 final class RsaBox {
+    static final int BLOCK = 64;
+    static final int EXPONENT_BYTES = 4;
+
     private RsaBox() {
     }
 
-    static byte[] encrypt(byte[] secret) throws GeneralSecurityException {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey());
-        return cipher.doFinal(secret);
+    static byte[] encrypt(byte[] block) {
+        return modPow(block, Keys.PUBLIC_EXPONENT);
     }
 
-    static byte[] decrypt(byte[] cipher) throws GeneralSecurityException {
-        Cipher cipherBox = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        cipherBox.init(Cipher.DECRYPT_MODE, privateKey());
-        return cipherBox.doFinal(cipher);
+    static byte[] decrypt(byte[] block) {
+        return modPow(block, Keys.PRIVATE_EXPONENT);
     }
 
     static byte[] modulus() {
@@ -35,18 +29,41 @@ final class RsaBox {
         return hex(Keys.PUBLIC_EXPONENT);
     }
 
-    private static PublicKey publicKey() throws GeneralSecurityException {
-        return KeyFactory.getInstance("RSA").generatePublic(
-                new RSAPublicKeySpec(number(Keys.MODULUS), number(Keys.PUBLIC_EXPONENT)));
+    static byte[] plain() {
+        return hex(Keys.PLAIN);
     }
 
-    private static PrivateKey privateKey() throws GeneralSecurityException {
-        return KeyFactory.getInstance("RSA").generatePrivate(
-                new RSAPrivateKeySpec(number(Keys.MODULUS), number(Keys.PRIVATE_EXPONENT)));
+    static byte[] cipher() {
+        return hex(Keys.CIPHER);
     }
 
-    private static BigInteger number(String hex) {
-        return new BigInteger(1, hex(hex));
+    private static byte[] modPow(byte[] block, String exponentHex) {
+        if (block == null || block.length != BLOCK) {
+            throw new IllegalArgumentException("block must be " + BLOCK + " bytes");
+        }
+        BigInteger modulus = new BigInteger(1, hex(Keys.MODULUS));
+        BigInteger exponent = new BigInteger(1, hex(exponentHex));
+        BigInteger value = new BigInteger(1, block);
+        if (value.compareTo(modulus) >= 0) {
+            throw new IllegalArgumentException("block is not smaller than the modulus");
+        }
+        return fixed(value.modPow(exponent, modulus), BLOCK);
+    }
+
+    private static byte[] fixed(BigInteger value, int length) {
+        byte[] raw = value.toByteArray();
+        int start = 0;
+        int count = raw.length;
+        if (count > 0 && raw[0] == 0) {
+            start = 1;
+            count--;
+        }
+        if (count > length) {
+            throw new IllegalArgumentException("value does not fit in " + length + " bytes");
+        }
+        byte[] out = new byte[length];
+        System.arraycopy(raw, start, out, length - count, count);
+        return out;
     }
 
     private static byte[] hex(String text) {

@@ -326,6 +326,21 @@
               <FilePath>.\src\board.c</FilePath>
             </File>
             <File>
+              <FileName>mh_rsa.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\mh_rsa.c</FilePath>
+            </File>
+            <File>
+              <FileName>mh_misc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\mh_misc.c</FilePath>
+            </File>
+            <File>
+              <FileName>mh_rand.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\mh_rand.c</FilePath>
+            </File>
+            <File>
               <FileName>key.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\src\key.h</FilePath>

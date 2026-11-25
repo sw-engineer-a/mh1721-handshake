@@ -4,7 +4,7 @@
 
 .section STACK, "aw", %nobits
 .align 3
-.space 0x2000
+.space 0x8000
 .global __initial_sp
 __initial_sp:
 
