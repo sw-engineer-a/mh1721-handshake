@@ -115,12 +115,17 @@ public class MainActivity extends Activity {
                 Frames.PublicKey pub = Frames.parsePublic(link.transact(Frames.request(Frames.HELLO, null)));
                 boolean modulusMatches = Arrays.equals(pub.modulus, RsaBox.modulus());
                 boolean exponentMatches = Arrays.equals(pub.exponent, RsaBox.publicExponent());
-                byte[] cipher = RsaBox.encrypt(secret);
-                byte[] opened = link.transact(Frames.request(Frames.OPEN, cipher));
-                text = "board\nmodulus matches " + modulusMatches
-                        + "\nexponent matches " + exponentMatches
-                        + "\ncipher bytes " + cipher.length
-                        + "\nopened matches " + Arrays.equals(opened, secret);
+                if (!modulusMatches || !exponentMatches) {
+                    text = "board\nhandshake failed"
+                            + "\nmodulus matches " + modulusMatches
+                            + "\nexponent matches " + exponentMatches;
+                } else {
+                    byte[] cipher = RsaBox.encrypt(secret);
+                    byte[] opened = link.transact(Frames.request(Frames.OPEN, cipher));
+                    text = "board\nhandshake ok"
+                            + "\ncipher bytes " + cipher.length
+                            + "\nplain matches " + Arrays.equals(opened, secret);
+                }
             } catch (Exception error) {
                 text = error.getClass().getSimpleName() + ": " + error.getMessage();
             }

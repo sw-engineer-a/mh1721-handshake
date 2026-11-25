@@ -1,9 +1,11 @@
 #include "board.h"
 
 /*
- * Replace these two functions with the MH1721 UART or USB.
- * In the Keil simulator, set board_rx_byte and board_rx_ready to inject a byte.
- * Replies are stored in board_tx.
+ * Byte link for the handshake frames.
+ * The MH1721 boot UART is GPIO0 (receive) and GPIO1 (transmit). The public
+ * brief does not publish the UART registers, so these functions keep the
+ * bytes in RAM. In the simulator, set board_rx_byte and board_rx_ready to
+ * inject a byte. Replies are stored in board_tx.
  */
 
 volatile uint8_t board_rx_byte;

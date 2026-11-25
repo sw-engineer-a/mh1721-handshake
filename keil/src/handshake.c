@@ -4,13 +4,15 @@
 #define CMD_HELLO 0x01u
 #define CMD_OPEN  0x02u
 
-#define ST_OK     0u
-#define ST_BAD    1u
-#define ST_CRYPTO 2u
-#define ST_LENGTH 3u
+#define ST_OK         0u
+#define ST_BAD        1u
+#define ST_CRYPTO     2u
+#define ST_LENGTH     3u
+#define ST_NEED_HELLO 4u
 
 static uint8_t payload[256];
 static uint8_t reply[280];
+static int greeted;
 
 static void read_exact(uint8_t *dst, int len) {
     int i;
@@ -55,10 +57,16 @@ void handshake_loop(void) {
             if (n < 0) {
                 send_frame(ST_CRYPTO, 0, 0);
             } else {
+                greeted = 1;
                 send_frame(ST_OK, reply, n);
             }
         } else if (header[0] == CMD_OPEN) {
-            int n = rsa_open(payload, len, reply, (int)sizeof(reply));
+            int n;
+            if (!greeted) {
+                send_frame(ST_NEED_HELLO, 0, 0);
+                continue;
+            }
+            n = rsa_open(payload, len, reply, (int)sizeof(reply));
             if (n < 0) {
                 send_frame(ST_CRYPTO, 0, 0);
             } else {

@@ -5,7 +5,8 @@
 #include <stddef.h>
 #include <string.h>
 
-#define BN_LIMBS 140
+/* 512-bit values need 16 limbs. A product needs 32. 40 fits the MH1721's 16 KB RAM. */
+#define BN_LIMBS 40
 #define MAGIC 0x52534131u
 
 typedef struct {

@@ -2,10 +2,13 @@ package com.mh1721.handshake;
 
 /** Same 512-bit key and vectors as mh-rsa and keil/src/key.h. */
 final class Keys {
+    /** Public modulus N. Encryption and decryption reduce modulo N. */
     static final String MODULUS =
             "8372D323558E6FFB12AF6F70462BC1992805C8D38FC6622D4E79EB65F5F9FD5C"
                     + "1B879ED92085CA43763B0FF0741ADF4E925C0ADEF747D08DC35AE8397D19802B";
+    /** Public exponent E. RsaBox.encrypt computes plaintext^E mod N. */
     static final String PUBLIC_EXPONENT = "00010001";
+    /** Private exponent D. RsaBox.decrypt computes ciphertext^D mod N. */
     static final String PRIVATE_EXPONENT =
             "17A11B8D5D82E66466DE7C94DD385E6BEEC2E3700C8767FCA6FFC9AE218297E5"
                     + "A47B78B66F7628DD55B43923E58A0F042F220B92A98253928BCBF915AB9E78C9";
